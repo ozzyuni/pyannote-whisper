@@ -255,7 +255,7 @@ class WriteTXT(ResultWriter):
     def write_result(
         self, result: dict, file: TextIO, options: Optional[dict] = None, **kwargs
     ):
-        for segment in result["segments"]:
+        for segment in result["chunks"]:
             print(segment["text"].strip(), file=file, flush=True)
 
 
@@ -287,8 +287,8 @@ class SubtitlesWriter(ResultWriter):
             line_count = 1
             # the next subtitle to yield (a list of word timings with whitespace)
             subtitle: List[dict] = []
-            last: float = get_start(result["segments"]) or 0.0
-            for segment in result["segments"]:
+            last: float = get_start(result["chunks"]) or 0.0
+            for segment in result["chunks"]:
                 chunk_index = 0
                 words_count = max_words_per_line
                 while chunk_index < len(segment["words"]):
@@ -336,10 +336,10 @@ class SubtitlesWriter(ResultWriter):
             if len(subtitle) > 0:
                 yield subtitle
 
-        if len(result["segments"]) > 0 and "words" in result["segments"][0]:
+        if len(result["chunks"]) > 0 and "words" in result["chunks"][0]:
             for subtitle in iterate_subtitles():
-                subtitle_start = self.format_timestamp(subtitle[0]["start"])
-                subtitle_end = self.format_timestamp(subtitle[-1]["end"])
+                subtitle_start = self.format_timestamp(subtitle[0]["timestamp"][0])
+                subtitle_end = self.format_timestamp(subtitle[-1]["timestamp"][0])
                 subtitle_text = "".join([word["word"] for word in subtitle])
                 if highlight_words:
                     last = subtitle_start
@@ -364,9 +364,9 @@ class SubtitlesWriter(ResultWriter):
                 else:
                     yield subtitle_start, subtitle_end, subtitle_text
         else:
-            for segment in result["segments"]:
-                segment_start = self.format_timestamp(segment["start"])
-                segment_end = self.format_timestamp(segment["end"])
+            for segment in result["chunks"]:
+                segment_start = self.format_timestamp(segment["timestamp"][0])
+                segment_end = self.format_timestamp(segment["timestamp"][1])
                 segment_text = segment["text"].strip().replace("-->", "->")
                 yield segment_start, segment_end, segment_text
 

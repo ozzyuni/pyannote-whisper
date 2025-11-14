@@ -38,6 +38,6 @@ class Whisper:
                     f"{self.model_id} is an English-only model but receipted '{self.args['language']}'; using English instead.")
             self.args['language'] = "en"
         
-        result = self.pipe(filename, generate_kwargs={self.args})
+        result = self.pipe(filename, generate_kwargs=self.args)
 
         return result
