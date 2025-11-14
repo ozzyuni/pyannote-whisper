@@ -1,0 +1,22 @@
+services:
+  transcriber:
+    build:
+      context: .
+      dockerfile: Dockerfile-cuda
+    image: pyannote-whisper-cuda
+    runtime: nvidia
+    environment:
+      HF_TOKEN: "your-token-here"
+      HF_HOME: "/workspace/models/"
+    command: /workspace/startup.sh
+    network_mode: host
+    ipc: host
+    pid: host
+    restart: always
+    volumes:
+      - type: bind
+        source: ./workspace
+        target: /workspace
+      - type: bind
+        source: ./pyannote_whisper
+        target: /workspace/pyannote_whisper

@@ -1,8 +1,5 @@
-setuptools==59.5.0
-numpy
-torch
-torchvision
-openai-whisper
+jupyterlab
+transformers
+accelerate
 pyannote.audio
-soundfile
-speechbrain==0.5.16 
+pydub

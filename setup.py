@@ -10,8 +10,8 @@ setup(
     description="Speech Recognition plus diarization",
     readme="README.md",
     python_requires=">=3.7",
-    author="Ruiqing",
-    url="https://github.com/yinruiqing/pyannote-whisper",
+    author="ozzyuni",
+    url="https://github.com/ozzyuni/pyannote-whisper",
     license="MIT",
     packages=find_packages(exclude=["tests*"]),
     install_requires=[
