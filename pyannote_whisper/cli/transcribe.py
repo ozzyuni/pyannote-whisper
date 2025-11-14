@@ -1,17 +1,14 @@
 import argparse
 import os
-import warnings
-from typing import Literal, cast
+from typing import Literal
 
 import numpy as np
 import torch
-from whisper.tokenizer import LANGUAGES, TO_LANGUAGE_CODE
-from whisper.transcribe import transcribe
-from whisper.utils import (WriteSRT, WriteTXT, WriteVTT, optional_float,
-                           optional_int, str2bool)
 
+from pyannote_whisper.whisper import Whisper
+from pyannote_whisper.whisper_utils import (WriteSRT, WriteTXT, WriteVTT, optional_float,
+                           optional_int, str2bool, LANGUAGES, TO_LANGUAGE_CODE)
 from pyannote_whisper.utils import diarize_text, write_to_txt
-
 
 def cli():
     from whisper import available_models
@@ -64,22 +61,15 @@ def cli():
                         help="number of threads used by torch for CPU inference; supercedes MKL_NUM_THREADS/OMP_NUM_THREADS")
     parser.add_argument("--diarization", type=str2bool, default=True,
                         help="whether to perform speaker diarization; True by default")
+    
     parser.add_argument("--output_format", type=str, default="TXT", choices=['TXT', 'VTT', 'SRT'],
                         help="output format; TXT by default")
 
     args = parser.parse_args().__dict__
-    model_name: str = args.pop("model")
-    model_dir: str = args.pop("model_dir")
     output_dir: str = args.pop("output_dir")
-    device: str = args.pop("device")
-    output_format: Literal['TXT', 'VTT', 'SRT'] = args.pop("output_format")
     os.makedirs(output_dir, exist_ok=True)
 
-    if model_name.endswith(".en") and args["language"] not in {"en", "English"}:
-        if args["language"] is not None:
-            warnings.warn(
-                f"{model_name} is an English-only model but receipted '{args['language']}'; using English instead.")
-        args["language"] = "en"
+    output_format: Literal['TXT', 'VTT', 'SRT'] = args.pop("output_format")
 
     temperature = float(args.pop("temperature"))
     temperature_increment_on_fallback = args.pop("temperature_increment_on_fallback")
@@ -88,24 +78,38 @@ def cli():
     else:
         temperature = [temperature]
 
+    args.update({"temperature": temperature})
+
     threads = args.pop("threads")
     if threads > 0:
         torch.set_num_threads(threads)
 
-    from whisper import load_model
-    model = load_model(model_name, device=device, download_root=model_dir)
+    model_dir: str = args.pop("model_dir")
+
+    if model_dir != str(None):
+        os.environ['HF_HOME'] = model_dir
+
+    whisper = Whisper(args)
 
     diarization = args.pop("diarization")
-    if diarization:
-        from pyannote.audio import Pipeline
-        pipeline = Pipeline.from_pretrained("pyannote/speaker-diarization",
-                                            use_auth_token="HUGGINGFACE_CO_ACCOUNT_ACCESS_TOKEN")
+
+    hf_token = os.environ.get('HF_TOKEN', None)
+
+    if diarization and hf_token is not None:
+        from pyannote.audio import Pipeline as PyAnnotePipeline
+        pipeline = PyAnnotePipeline.from_pretrained("pyannote/speaker-diarization-community-1",
+                                            use_auth_token=hf_token)
         # create huggingface.co free account and create your access token ^ with access to read repos
         # also you will need to apply access forms for certain repos to get access to them (it's free too)
         # you will see which repos requires this additional actions as access errors when try to use the program 
+    elif hf_token is None:
+        print("No valid token found in the HF_TOKEN environment variable, disabling diarization")
+        diarization = False
 
     for audio_path in args.pop("audio"):
-        result = transcribe(model, audio_path, temperature=temperature,**args)
+        result = whisper.transcribe(audio_path)
+        audio_basename = os.path.basename(audio_path)
+
         audio_basename = os.path.basename(audio_path)
 
         if output_format == "TXT":

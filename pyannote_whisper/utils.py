@@ -3,9 +3,10 @@ from pyannote.core import Segment, Annotation, Timeline
 
 def get_text_with_timestamp(transcribe_res):
     timestamp_texts = []
-    for item in transcribe_res['segments']:
-        start = item['start']
-        end = item['end']
+    # Slight format change due to the different Whisper implementation
+    for item in transcribe_res['chunks']:
+        start = item['timestamp'][0]
+        end = item['timestamp'][1]
         text = item['text']
         timestamp_texts.append((Segment(start, end), text))
     return timestamp_texts
@@ -28,7 +29,6 @@ def merge_cache(text_cache):
 
 
 PUNC_SENT_END = ['.', '?', '!']
-
 
 def merge_sentence(spk_text):
     merged_spk_text = []
