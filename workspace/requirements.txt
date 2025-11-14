@@ -1,0 +1,5 @@
+jupyterlab
+transformers
+accelerate
+pyannote.audio
+pydub
