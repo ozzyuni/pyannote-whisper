@@ -9,12 +9,20 @@ class Whisper:
 
         self.device = self.args.pop("device")
         self.torch_dtype = torch.float16 if "cuda" in self.device else torch.float32
+        enable_fa2 = self.args.pop("flash_attention_2")
+        self.attn_implementation = "flash_attention_2" if enable_fa2 and "cuda" in self.device else "sdpa"
+
+        print("Attention mechanism:", self.attn_implementation)
         
         model_name: str = self.args.pop("model")
         self.model_id = "openai/whisper-" + model_name
         
         self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
-            self.model_id, dtype=self.torch_dtype, low_cpu_mem_usage=True, use_safetensors=True
+            self.model_id,
+            dtype=self.torch_dtype,
+            low_cpu_mem_usage=True,
+            use_safetensors=True,
+            attn_implementation=self.attn_implementation,
         )
         self.model.to(self.device)
         

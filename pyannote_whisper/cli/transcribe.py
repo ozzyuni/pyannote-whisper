@@ -19,6 +19,8 @@ def cli():
                         help="the path to save model files; uses ~/.cache/whisper by default")
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu",
                         help="device to use for PyTorch inference")
+    parser.add_argument("--flash_attention_2", type=str2bool, default=True,
+                        help="whether to use Flash Attention 2 instead of the default SDPA attention, only applicable if device=cuda")
     parser.add_argument("--output_dir", "-o", type=str, default=".", help="directory to save the outputs")
     parser.add_argument("--task", type=str, default="transcribe", choices=["transcribe", "translate"],
                         help="whether to perform X->X speech recognition ('transcribe') or X->English translation ('translate')")
