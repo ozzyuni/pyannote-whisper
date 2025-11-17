@@ -45,7 +45,7 @@ def cli():
     parser.add_argument("--diarization", type=str2bool, default=True,
                         help="whether to perform speaker diarization; True by default")
 
-    parser.add_argument("--exclusive", type=str2bool, default=False,
+    parser.add_argument("--exclusive", type=str2bool, default=True,
                         help="whether to use the exclusive or overlapping results from speech diarization")
     
     parser.add_argument("--output_format", type=str, default="TXT", choices=['TXT', 'VTT', 'SRT'],
@@ -66,6 +66,8 @@ def cli():
 
     args.update({"temperature": temperature})
 
+    device = args.get("device")
+
     threads = args.pop("threads")
     if threads > 0:
         torch.set_num_threads(threads)
@@ -84,8 +86,10 @@ def cli():
 
     if diarization and hf_token is not None:
         from pyannote.audio import Pipeline as PyAnnotePipeline
-        pipeline = PyAnnotePipeline.from_pretrained("pyannote/speaker-diarization-community-1",
+        pyannote_pipeline = PyAnnotePipeline.from_pretrained("pyannote/speaker-diarization-community-1",
                                             token=hf_token)
+        
+        pyannote_pipeline.to(torch.device(device))
         # create huggingface.co free account and create your access token ^ with access to read repos
         # also you will need to apply access forms for certain repos to get access to them (it's free too)
         # you will see which repos requires this additional actions as access errors when try to use the program 
@@ -117,9 +121,9 @@ def cli():
         if diarization:
 
             if exclusive_mode:
-                diarization_result = pipeline(audio_path).exclusive_speaker_diarization
+                diarization_result = pyannote_pipeline(audio_path).exclusive_speaker_diarization
             else:
-                diarization_result = pipeline(audio_path).speaker_diarization
+                diarization_result = pyannote_pipeline(audio_path).speaker_diarization
 
             filepath = os.path.join(output_dir, audio_basename + "_spk.txt")
             res = diarize_text(result, diarization_result)

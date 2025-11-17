@@ -7,6 +7,8 @@ def get_text_with_timestamp(transcribe_res):
     for item in transcribe_res['chunks']:
         start = item['timestamp'][0]
         end = item['timestamp'][1]
+        if end is None:
+            end = start
         text = item['text']
         timestamp_texts.append((Segment(start, end), text))
     return timestamp_texts
