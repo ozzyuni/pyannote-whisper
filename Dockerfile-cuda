@@ -2,8 +2,8 @@ FROM nvidia/cuda:12.8.1-devel-ubuntu24.04
 
 # User setup
 RUN userdel -r ubuntu && \
-    useradd -m pyannote-whisper && \
-    passwd pyannote-whisper -d
+    useradd -m pyannote_whisper && \
+    passwd pyannote_whisper -d
 
 # Base requirements
 RUN apt-get update && DEBIAN_FRONTEND="noninteractive" apt-get install -y \
@@ -21,12 +21,12 @@ RUN apt-get update && DEBIAN_FRONTEND="noninteractive" apt-get install -y \
 RUN mkdir -p /workspace/src/util_scripts && chmod 777 /workspace && \
     mkdir /venv && chmod 777 /venv
 
-RUN echo "pyannote-whisper ALL=(ALL:ALL) NOPASSWD: ALL" | tee /etc/sudoers.d/pyannote-whisper
+RUN echo "pyannote_whisper ALL=(ALL:ALL) NOPASSWD: ALL" | tee /etc/sudoers.d/pyannote_whisper
 
-USER pyannote-whisper
+USER pyannote_whisper
 
 # Venv setup
-RUN python3 -m venv /venv/pyannote-whisper_venv
+RUN python3 -m venv /venv/pyannote_whisper_venv
 
 # Python requirements
 RUN . /venv/pyannote_whisper_venv/bin/activate && \
@@ -35,7 +35,7 @@ RUN . /venv/pyannote_whisper_venv/bin/activate && \
 
 # The extra symlink gets around some weird library locations in the Nvidia base image:
 # https://github.com/tensorflow/tensorflow/issues/25865
-RUN . /venv/pyannote-whisper_venv/bin/activate && \
+RUN . /venv/pyannote_whisper_venv/bin/activate && \
     pip install ninja --no-cache-dir && \
     # EDIT MAX_JOBS IF RUNNING OUT OF RAM
     MAX_JOBS=16 pip install flash-attn==2.7.4.post1 --no-cache-dir --no-build-isolation
@@ -46,12 +46,12 @@ USER root
 RUN apt-get update && DEBIAN_FRONTEND="noninteractive" apt-get install -y \
     ffmpeg
 
-RUN rm /etc/sudoers.d/pyannote-whisper
+RUN rm /etc/sudoers.d/pyannote_whisper
 
 COPY ./setup.py /workspace/setup.py
 
-USER pyannote-whisper
+USER pyannote_whisper
 
 WORKDIR /workspace
 
-CMD . /venv/pyannote-whisper_venv/bin/activate
+CMD . /venv/pyannote_whisper_venv/bin/activate
