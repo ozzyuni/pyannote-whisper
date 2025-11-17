@@ -1,6 +1,6 @@
 # pyannote-whisper
 
-Run ASR and speaker diarization based on whisper and pyannote.audio.
+Run ASR and speaker diarization based on whisper and pyannote.audio. Compared to the original, this fork updates `pyannote` to `speaker_diarization_community_1` and loads `whisper` through `transformers` for some different configuration options. It also provides a new Docker-based setup option.
 
 ## Installation
 1. Install transformers and accelerate
@@ -19,9 +19,15 @@ Source the venv and install this package:
 
     source setup.sh
 
-Same as whisper except a new param `diarization`:
+Can be used similarly to the original `pyannote_whisper`:
 
     python -m pyannote_whisper.cli.transcribe data/afjiv.wav --model large-v3 --diarization True
+
+There have been some changes to available parameters, check if needed:
+
+    python -m pyannote_whisper.cli.transcribe --help
+
+By default, uses `cuda` for both steps if supported, and `flash attention 2` to further speed up `whisper`.
 
 ## Python usage
 
@@ -60,50 +66,4 @@ for seg, spk, sent in final_result:
 119.26 135.68 SPEAKER_02  I think we should fundamentally all of us rethink how procurement should be done and then start to define the functionality that we need and how we can make this work. What What we're doing today is absolutely wrong.
 135.68 145.26 SPEAKER_02  We don't like it, procurement people don't like it, our colleagues don't like it, nobody wants it, and we're spending a huge amount of money for no reason.
 
-```
-## Python usage 2
-please find more details in [this](https://gist.github.com/hbredin/049f2b629700bcea71324d2c1e7f8337) notebook.
-
-```python
-import whisper
-from pyannote.audio import Pipeline
-from pyannote.audio import Audio
-from pyannote_whisper.utils import diarize_text
-pipeline = Pipeline.from_pretrained("pyannote/speaker-diarization",
-                                    use_auth_token="your/token")
-model = whisper.load_model("tiny.en")
-diarization_result = pipeline("data/afjiv.wav")
-
-from pyannote.audio import Audio
-audio = Audio(sample_rate=16000, mono=True)
-audio_file = "data/afjiv.wav"
-for segment, _, speaker in diarization_result.itertracks(yield_label=True):
-    waveform, sample_rate = audio.crop(audio_file, segment)
-    text = model.transcribe(waveform.squeeze().numpy())["text"]
-    print(f"{segment.start:.2f}s {segment.end:.2f}s {speaker}: {text}")
-
-```
-## Meeting summary from chatgpt
-
-```
-summarize the following words: SPEAKER_00  I think if you're a leader and you don't understand the terms that you're using, that's probably the first start.
-SPEAKER_00  It's really important that as a leader in the organisation you understand what digitisation means.
-SPEAKER_00  You take the time to read widely in the sector.
-SPEAKER_00  There are a lot of really good books, Kevin Kelly, who started Wired magazine has written a great book on various technologies.
-...
-```
-```
-Leaders need to understand the terms and technologies of digitization in order to separate hype from hope and apply it effectively to their business. Becoming data-driven and collaborating with technology vendors can help organizations achieve their desired outcomes. Procurement processes need to be fundamentally rethought to improve functionality and eliminate unnecessary spending.
-```
-
-```
-summarize the opinions of different speaker
-```
-
-```
-Speaker 00 emphasizes the importance of leaders understanding digitization terms and technologies to apply them effectively to their business. 
-Speaker 01 suggests that taking control of spend data is a crucial first step in digital transformation. 
-Speaker 02 believes that procurement processes need to be rethought to improve functionality and eliminate unnecessary spending. 
-Speaker 03 advises understanding the purpose of digitization and collaborating with colleagues for a better outcome. 
-Speaker 04 suggests thinking big and being brave, as well as talking to technology vendors to achieve desired outcomes.
 ```
