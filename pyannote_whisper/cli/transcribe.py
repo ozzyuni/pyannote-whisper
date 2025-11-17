@@ -42,6 +42,9 @@ def cli():
                         help="number of threads used by torch for CPU inference; supercedes MKL_NUM_THREADS/OMP_NUM_THREADS")
     parser.add_argument("--diarization", type=str2bool, default=True,
                         help="whether to perform speaker diarization; True by default")
+
+    parser.add_argument("--exclusive", type=str2bool, default=False,
+                        help="whether to use the exclusive or overlapping results from speech diarization")
     
     parser.add_argument("--output_format", type=str, default="TXT", choices=['TXT', 'VTT', 'SRT'],
                         help="output format; TXT by default")
@@ -73,6 +76,7 @@ def cli():
     whisper = Whisper(args)
 
     diarization = args.pop("diarization")
+    exclusive_mode = args.pop("exclusive")
 
     hf_token = os.environ.get('HF_TOKEN', None)
 
@@ -109,7 +113,12 @@ def cli():
                 WriteSRT(output_dir).write_result(result, file=file)
 
         if diarization:
-            diarization_result = pipeline(audio_path)
+
+            if exclusive_mode:
+                diarization_result = pipeline(audio_path).exclusive_speaker_diarization
+            else:
+                diarization_result = pipeline(audio_path).speaker_diarization
+
             filepath = os.path.join(output_dir, audio_basename + "_spk.txt")
             res = diarize_text(result, diarization_result)
             write_to_txt(res, filepath)

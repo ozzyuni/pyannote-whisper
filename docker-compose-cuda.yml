@@ -1,5 +1,5 @@
 services:
-  transcriber:
+  pyannote_whisper:
     build:
       context: .
       dockerfile: Dockerfile-cuda
