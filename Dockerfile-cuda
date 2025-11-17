@@ -29,7 +29,7 @@ USER pyannote-whisper
 RUN python3 -m venv /venv/pyannote-whisper_venv
 
 # Python requirements
-RUN . /venv/pyannote-whisper_venv/bin/activate && \
+RUN . /venv/pyannote_whisper_venv/bin/activate && \
     pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir jupyterlab transformers accelerate pyannote.audio pydub ipywidgets
 

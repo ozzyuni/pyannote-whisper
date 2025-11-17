@@ -2,4 +2,3 @@
 
 . /venv/pyannote_whisper_venv/bin/activate
 pip install .
-jupyter lab --no-browser --port=8080

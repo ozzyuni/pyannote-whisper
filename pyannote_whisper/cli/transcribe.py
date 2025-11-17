@@ -1,5 +1,6 @@
 import argparse
 import os
+import time
 from typing import Literal
 
 import numpy as np
@@ -28,10 +29,7 @@ def cli():
                         choices=sorted(LANGUAGES.keys()) + sorted([k.title() for k in TO_LANGUAGE_CODE.keys()]),
                         help="language spoken in the audio, specify None to perform language detection")
 
-    parser.add_argument("--temperature", type=optional_float, default=0, help="temperature to use for sampling")
-    parser.add_argument("--length_penalty", type=optional_float, default=0.0,
-                        help="optional token length penalty coefficient (alpha) as in https://arxiv.org/abs/1609.08144, uses simple length normalization by default")
-                        
+    parser.add_argument("--temperature", type=optional_float, default=0, help="temperature to use for sampling")                   
     parser.add_argument("--temperature_increment_on_fallback", type=optional_float, default=0.2,
                         help="temperature to increase when falling back when the decoding fails to meet either of the thresholds below")
     parser.add_argument("--compression_ratio_threshold", type=optional_float, default=2.4,
@@ -98,7 +96,18 @@ def cli():
         diarization = False
 
     for audio_path in args.pop("audio"):
+        print("Starting transcription")
+        transctiption_start = time.time()
+
         result = whisper.transcribe(audio_path)
+
+        transctiption_end = time.time()
+
+        print("Transcription completed in",
+            round(transctiption_end - transctiption_start, 1),
+            "seconds"
+            )
+
         audio_basename = os.path.basename(audio_path)
 
         audio_basename = os.path.basename(audio_path)
@@ -119,11 +128,20 @@ def cli():
                 WriteSRT(output_dir).write_result(result, file=file)
 
         if diarization:
+            print("Starting diarization")
+            diarization_start = time.time()
 
             if exclusive_mode:
                 diarization_result = pyannote_pipeline(audio_path).exclusive_speaker_diarization
             else:
                 diarization_result = pyannote_pipeline(audio_path).speaker_diarization
+
+            diarization_end = time.time()
+
+            print("Diarization completed in",
+                round(diarization_end - diarization_start, 1),
+                "seconds"
+                )
 
             filepath = os.path.join(output_dir, audio_basename + "_spk.txt")
             res = diarize_text(result, diarization_result)
