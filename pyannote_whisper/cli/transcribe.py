@@ -1,4 +1,5 @@
 import argparse
+import gc
 import os
 import time
 from typing import Literal
@@ -111,6 +112,12 @@ def cli():
         audio_basename = os.path.basename(audio_path)
 
         audio_basename = os.path.basename(audio_path)
+
+        # Delete whisper from memory to clear up space on systems with limited (V)RAM
+        del whisper
+        gc.collect()
+        if "cuda" in device:
+            torch.cuda.empty_cache()
 
         if output_format == "TXT":
             # save TXT
