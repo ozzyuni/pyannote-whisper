@@ -39,7 +39,7 @@ from pyannote.audio import Pipeline as PyAnnotePipeline
 from pyannote_whisper.utils import diarize_text
 pipeline = PyAnnotePipeline.from_pretrained(
     "pyannote/speaker-diarization-community-1",
-    use_auth_token="your/token"
+    token="your/token"
     )
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
