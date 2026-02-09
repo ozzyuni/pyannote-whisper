@@ -38,13 +38,13 @@ RUN . /venv/pyannote_whisper_venv/bin/activate && \
 RUN . /venv/pyannote_whisper_venv/bin/activate && \
     pip install ninja --no-cache-dir && \
     # EDIT MAX_JOBS IF RUNNING OUT OF RAM
-    MAX_JOBS=16 pip install flash-attn==2.7.4.post1 --no-cache-dir --no-build-isolation
+    MAX_JOBS=1 pip install flash-attn==2.8.3 --no-cache-dir --no-build-isolation
 
 USER root
 
 # Additional requirements
 RUN apt-get update && DEBIAN_FRONTEND="noninteractive" apt-get install -y \
-    ffmpeg
+    ffmpeg python3-tk tk-dev
 
 RUN rm /etc/sudoers.d/pyannote_whisper
 

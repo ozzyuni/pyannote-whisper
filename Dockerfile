@@ -37,7 +37,7 @@ USER root
 
 # Additional requirements
 RUN apt-get update && DEBIAN_FRONTEND="noninteractive" apt-get install -y \
-    ffmpeg
+    ffmpeg tk-dev
 
 RUN rm /etc/sudoers.d/pyannote_whisper
 
