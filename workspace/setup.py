@@ -1,6 +1,3 @@
-import os
-
-import pkg_resources
 from setuptools import setup, find_packages
 
 setup(
@@ -15,10 +12,11 @@ setup(
     license="MIT",
     packages=find_packages(exclude=["tests*"]),
     install_requires=[
-        str(r)
-        for r in pkg_resources.parse_requirements(
-            open(os.path.join(os.path.dirname(__file__), "requirements.txt"))
-        )
+        "jupyterlab",
+        "transformers",
+        "accelerate",
+        "pyannote.audio",
+        "pydub",
     ],
     entry_points={
         'console_scripts': ['pyannote-whisper=pyannote_whisper.cli.transcribe:cli'],
