@@ -91,21 +91,6 @@ def cli(args: dict):
     diarization = args.pop("diarization")
     exclusive_mode = args.pop("exclusive")
 
-    hf_token = os.environ.get('HF_TOKEN', None)
-
-    if diarization and hf_token is not None:
-        from pyannote.audio import Pipeline as PyAnnotePipeline
-        pyannote_pipeline = PyAnnotePipeline.from_pretrained("pyannote/speaker-diarization-community-1",
-                                            token=hf_token)
-        
-        pyannote_pipeline.to(torch.device(device))
-        # create huggingface.co free account and create your access token ^ with access to read repos
-        # also you will need to apply access forms for certain repos to get access to them (it's free too)
-        # you will see which repos requires this additional actions as access errors when try to use the program 
-    elif hf_token is None:
-        print("No valid token found in the HF_TOKEN environment variable, disabling diarization")
-        diarization = False
-
     for audio_path in args.pop("audio"):
         print("Starting transcription")
         transctiption_start = time.time()
@@ -149,6 +134,21 @@ def cli(args: dict):
             with open(transcript_path, "w", encoding="utf-8") as file:
                 WriteSRT(output_dir).write_result(result, file=file)
 
+        hf_token = os.environ.get('HF_TOKEN', None)
+
+        if diarization and hf_token is not None:
+            from pyannote.audio import Pipeline as PyAnnotePipeline
+            pyannote_pipeline = PyAnnotePipeline.from_pretrained("pyannote/speaker-diarization-community-1",
+                                                token=hf_token)
+            
+            pyannote_pipeline.to(torch.device(device))
+            # create huggingface.co free account and create your access token ^ with access to read repos
+            # also you will need to apply access forms for certain repos to get access to them (it's free too)
+            # you will see which repos requires this additional actions as access errors when try to use the program 
+        elif hf_token is None:
+            print("No valid token found in the HF_TOKEN environment variable, disabling diarization")
+            diarization = False
+
         diarization_path = ""
 
         if diarization:
@@ -170,6 +170,12 @@ def cli(args: dict):
             diarization_path = os.path.join(output_dir, audio_basename + "_spk.txt")
             res = diarize_text(result, diarization_result)
             write_to_txt(res, diarization_path)
+
+            # Delete pyannote from memory to avoid running out of memory on consequent runs
+            del pyannote_pipeline
+            gc.collect()
+            if "cuda" in device:
+                torch.cuda.empty_cache()
 
     return transcript_path, diarization_path
 

@@ -54,7 +54,7 @@ class PyAnnoteWhisperGUI:
 
   def set_whisper(self, model: str):
     self.args['model'] = model
-    self.add_to_log(f"Model choice updated: '{model}'")
+    self.add_to_log(f"Changed whisper model: '{model}'")
     return self.log
 
   def set_output_format(self, format: str):
