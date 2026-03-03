@@ -15,7 +15,12 @@ class Whisper:
         print("Attention mechanism:", self.attn_implementation)
         
         model_name: str = self.args.pop("model")
-        self.model_id = "openai/whisper-" + model_name
+
+        # Rudimentary auto detection to support both shorthand and complete repository names
+        if len(model_name.split("/")) > 1:
+            self.model_id = model_name
+        else:
+            self.model_id = "openai/whisper-" + model_name
         
         self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
             self.model_id,

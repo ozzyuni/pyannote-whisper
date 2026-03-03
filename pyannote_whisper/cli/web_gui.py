@@ -25,7 +25,7 @@ class PyAnnoteWhisperGUI:
 
   def launch(self):
     with self.interface:
-      whisper = gr.Dropdown(label="Whisper model", choices=['large-v3', 'large-v3-turbo', 'medium', 'small'])
+      whisper = gr.Dropdown(label="Whisper model", choices=['large-v3', 'large-v3-turbo', 'medium', 'small', 'mozilla-ai/whisper-large-v3-turbo-fi'])
       transcript_type = gr.Dropdown(label="Output format", choices=['txt', 'vtt', 'srt'])
       diarization = gr.Dropdown(label="Diarization", choices=['enabled', 'disabled']) 
       log_box = gr.Textbox(label="Output", placeholder=INSTRUCTIONS, lines=10)
