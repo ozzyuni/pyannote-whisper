@@ -1,0 +1,9 @@
+{
+  "whisper_models": [
+      "mozilla-ai/whisper-large-v3-turbo-fi"
+  ],
+
+  "args": {
+    "audio": []
+  }
+}

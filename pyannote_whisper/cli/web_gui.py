@@ -1,9 +1,13 @@
-import gradio as gr
 import datetime
+import json
+import os
+import gradio as gr
 
 from pyannote_whisper.cli.transcribe import parse_args, cli
 
-INSTRUCTIONS="""Upload an audio file to begin.
+CONFIG_FILE = "pyannote_whisper.json"
+
+INSTRUCTIONS = """Upload an audio file to begin.
 
 The Web GUI includes a limited number of parameters to adjust:
 
@@ -21,11 +25,19 @@ class PyAnnoteWhisperGUI:
                  'audio': None}
     self.transcript_path = None
     self.diarization_path = None
+    self.config_file = CONFIG_FILE
     self.log = ""
 
   def launch(self):
+
+    whisper_models = ['large-v3', 'large-v3-turbo', 'medium', 'small']
+    if os.path.exists(self.config_file):
+      with open(self.config_file, "r") as f:
+        custom_models = json.load(f)["whisper_models"]
+        whisper_models.extend(custom_models)
+
     with self.interface:
-      whisper = gr.Dropdown(label="Whisper model", choices=['large-v3', 'large-v3-turbo', 'medium', 'small', 'mozilla-ai/whisper-large-v3-turbo-fi'])
+      whisper = gr.Dropdown(label="Whisper model", choices=whisper_models)
       transcript_type = gr.Dropdown(label="Output format", choices=['txt', 'vtt', 'srt'])
       diarization = gr.Dropdown(label="Diarization", choices=['enabled', 'disabled']) 
       log_box = gr.Textbox(label="Output", placeholder=INSTRUCTIONS, lines=10)
@@ -63,7 +75,7 @@ class PyAnnoteWhisperGUI:
     return self.log
   
   def set_diarization(self, diarization: str):
-    self.args['diarization'] = True if "enabled" else False
+    self.args['diarization'] = True if diarization=="enabled" else False
     self.add_to_log(f"Changed diarization setting: {diarization}")
     return self.log
 
@@ -81,6 +93,12 @@ class PyAnnoteWhisperGUI:
 
   def process_file(self):
     args = parse_args(require_audio=False)
+
+    if os.path.exists(self.config_file):
+      with open(self.config_file, "r") as f:
+        custom_args = json.load(f)["args"]
+        args.update(custom_args)
+
     args.update(self.args)
     msg = ""
     try:
