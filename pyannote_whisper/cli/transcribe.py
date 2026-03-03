@@ -12,10 +12,12 @@ from pyannote_whisper.whisper_utils import (WriteSRT, WriteTXT, WriteVTT, option
                            optional_int, str2bool, LANGUAGES, TO_LANGUAGE_CODE)
 from pyannote_whisper.utils import diarize_text, write_to_txt
 
-def cli():
-
+def parse_args(require_audio: bool = True):
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("audio", nargs="+", type=str, help="audio file(s) of WAVE (.wav) format to transcribe")
+
+    if require_audio:
+        parser.add_argument("audio", nargs="+", type=str, help="audio file(s) of WAVE (.wav) format to transcribe")
+
     parser.add_argument("--model", default="large-v3", help="name of the Whisper model to use")
     parser.add_argument("--model_dir", type=str, default=None,
                         help="the path to save model files; uses ~/.cache/whisper by default")
@@ -51,6 +53,14 @@ def cli():
                         help="output format; TXT by default")
 
     args = parser.parse_args().__dict__
+
+    return args
+
+def cli(args: dict):
+
+    if args.get("audio") is None:
+        raise ValueError("Audio file not specified")
+
     output_dir: str = args.pop("output_dir")
     os.makedirs(output_dir, exist_ok=True)
 
@@ -119,20 +129,27 @@ def cli():
         if "cuda" in device:
             torch.cuda.empty_cache()
 
+        transcript_path = ""
+
         if output_format == "TXT":
             # save TXT
-            with open(os.path.join(output_dir, audio_basename + ".txt"), "w", encoding="utf-8") as file:
+            transcript_path = os.path.join(output_dir, audio_basename + ".txt")
+            with open(transcript_path, "w", encoding="utf-8") as file:
                 WriteTXT(output_dir).write_result(result, file=file)
 
         elif output_format == "VTT":
             # save VTT
-            with open(os.path.join(output_dir, audio_basename + ".vtt"), "w", encoding="utf-8") as file:
+            transcript_path = os.path.join(output_dir, audio_basename + ".vtt")
+            with open(transcript_path, "w", encoding="utf-8") as file:
                 WriteVTT(output_dir).write_result(result, file=file)
 
         elif output_format == "SRT":
             # save SRT
-           with open(os.path.join(output_dir, audio_basename + ".srt"), "w", encoding="utf-8") as file:
+            transcript_path = os.path.join(output_dir, audio_basename + ".srt")
+            with open(transcript_path, "w", encoding="utf-8") as file:
                 WriteSRT(output_dir).write_result(result, file=file)
+
+        diarization_path = ""
 
         if diarization:
             print("Starting diarization")
@@ -150,10 +167,15 @@ def cli():
                 "seconds"
                 )
 
-            filepath = os.path.join(output_dir, audio_basename + "_spk.txt")
+            diarization_path = os.path.join(output_dir, audio_basename + "_spk.txt")
             res = diarize_text(result, diarization_result)
-            write_to_txt(res, filepath)
+            write_to_txt(res, diarization_path)
 
+    return transcript_path, diarization_path
+
+def main():
+    args = parse_args()
+    cli(args)
 
 if __name__ == '__main__':
-    cli()
+    main()

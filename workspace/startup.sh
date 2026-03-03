@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
 . /venv/pyannote_whisper_venv/bin/activate
-pip install .
-jupyter lab --no-browser --port=8080
+pip install /pyannote_whisper
+pyannote-whisper-gui

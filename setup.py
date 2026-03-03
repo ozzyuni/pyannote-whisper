@@ -17,9 +17,11 @@ setup(
         "accelerate",
         "pyannote.audio",
         "pydub",
+        "gradio",
     ],
     entry_points={
-        'console_scripts': ['pyannote-whisper=pyannote_whisper.cli.transcribe:cli'],
+        'console_scripts': ['pyannote-whisper=pyannote_whisper.cli.transcribe:main',
+                            'pyannote-whisper-gui=pyannote_whisper.cli.web_gui:main'],
     },
     include_package_data=True,
     extras_require={'dev': ['pytest']},

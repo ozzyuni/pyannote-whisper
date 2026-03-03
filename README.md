@@ -10,6 +10,18 @@ Recommended: Use the provided Docker setups instead:
 
     docker compose -f docker-compose-cuda.yml build
 
+## GUI usage
+
+A Web GUI based on Gradio is the easiest way to operate the tool, if you don't need access to every parameter. First, simply start the server using Docker
+
+    docker compose -f docker-compose-cuda.yml up
+
+After the the tool is loaded, the GUI should be accessible on your browser at [http://127.0.0.1:7860/](http://127.0.0.1:7860/).
+
+Once done, remeber to get rid of the container to avoid clutter.
+
+    docker compose -f docker-compose-cuda.yml down
+
 ## Command-line usage
 Open a command line in Docker
 
@@ -28,6 +40,10 @@ There have been some changes to available parameters, check if needed:
     python -m pyannote_whisper.cli.transcribe --help
 
 By default, uses `cuda` for both steps if supported, and `flash attention 2` to further speed up `whisper`.
+
+When done, stop the container
+
+    docker compose -f docker-compose-cuda.yml down --remove-orphans
 
 ## Python usage
 

@@ -18,8 +18,9 @@ RUN apt-get update && DEBIAN_FRONTEND="noninteractive" apt-get install -y \
     python3-venv
 
 # Workspace setup
-RUN mkdir -p /workspace/src/util_scripts && chmod 777 /workspace && \
-    mkdir /venv && chmod 777 /venv
+RUN mkdir -p /workspace && chmod 777 /workspace && \
+    mkdir /venv && chmod 777 /venv && \
+    mkdir /pyannote_whisper && chmod 777 /pyannote_whisper
 
 RUN echo "pyannote_whisper ALL=(ALL:ALL) NOPASSWD: ALL" | tee /etc/sudoers.d/pyannote_whisper
 
@@ -37,11 +38,12 @@ USER root
 
 # Additional requirements
 RUN apt-get update && DEBIAN_FRONTEND="noninteractive" apt-get install -y \
-    ffmpeg tk-dev
+    ffmpeg python3-tk tk-dev
+
+RUN . /venv/pyannote_whisper_venv/bin/activate && \
+pip install --upgrade gradio
 
 RUN rm /etc/sudoers.d/pyannote_whisper
-
-COPY ./setup.py /workspace/setup.py
 
 USER pyannote_whisper
 
