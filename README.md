@@ -1,6 +1,6 @@
 # pyannote-whisper
 
-Run ASR and speaker diarization based on whisper and pyannote.audio. Compared to the original, this fork updates `pyannote` to `speaker_diarization_community_1` and loads `whisper` through `transformers` for some different configuration options. It also provides a new Docker-based setup option.
+Run ASR and speaker diarization based on whisper and pyannote.audio. Compared to the original, this fork updates `pyannote` to `speaker_diarization_community_1` and loads `whisper` through `transformers` for some different configuration options, making it easy to use fine-tuned whisper models from Hugging Face. It also provides a new Docker-based setup option, and a browser-based GUI for simpler usage.
 
 ## Installation
 1. Install transformers and accelerate
@@ -9,6 +9,12 @@ Run ASR and speaker diarization based on whisper and pyannote.audio. Compared to
 Recommended: Use the provided Docker setups instead:
 
     docker compose -f docker-compose-cuda.yml build
+
+To use `diarization`, you must accept the PyAnnote TOS on the [pyannote/speaker-diarization-community-1 model page](https://huggingface.co/pyannote/speaker-diarization-community-1), and generate a valid HF token. You may also have to accept the TOS separately for some other PyAnnote models the main model depends on, you should receive error messages to indicate this.
+
+The token should be provided as an environment variable, which can done in [docker-compose.yml](https://github.com/ozzyuni/pyannote-whisper/blob/main/docker-compose.yml), [docker-compose-cuda.yml](https://github.com/ozzyuni/pyannote-whisper/blob/main/docker-compose-cuda.yml) or directly on the command line in case of CLI usage:
+
+    export HF_TOKEN="your-token-here"
 
 ## GUI usage
 
@@ -21,6 +27,23 @@ After the the tool is loaded, the GUI should be accessible on your browser at [h
 Once done, remeber to get rid of the container to avoid clutter.
 
     docker compose -f docker-compose-cuda.yml down
+
+If there is a need to change parameters not accessible through the GUI, the script will attempt to update them from "args" in [pyannote_whisper.json](https://github.com/ozzyuni/pyannote-whisper/blob/main/workspace/pyannote_whisper.json). This file also supports adding custom options to the whisper models list.
+
+Example:
+
+    {
+        "whisper_models": [
+            "mozilla-ai/whisper-large-v3-turbo-fi"
+        ],
+
+        "args": {
+            "both_models_in_memory": false,
+            "output_dir": "/tmp/pyannote_whisper"
+        }
+    }
+
+This changes the output directory to `/tmp` in order to avoid filling up the disk, and tells whisper and pyannote models to automatically unload immediately after use. The latter slightly slows down batch processing  due to repeated reloading of the models, but makes it possible to run the pipeline with less available memory. For example, this is required to run `whisper-large-v3` and `pyannote` on an RTX 1000 6GB laptop GPU.
 
 ## Command-line usage
 Open a command line in Docker
