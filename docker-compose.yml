@@ -17,8 +17,5 @@ services:
         source: ./workspace
         target: /workspace
       - type: bind
-        source: ./pyannote_whisper
-        target: /workspace/pyannote_whisper
-      - type: bind
-        source: ./data
-        target: /workspace/data
+        source: .
+        target: /pyannote_whisper
