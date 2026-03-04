@@ -1,11 +1,12 @@
 import warnings
 import torch
+import copy
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 
 class Whisper:
 
     def __init__(self, args):
-        self.args = args
+        self.args = copy.deepcopy(args)
 
         self.device = self.args.pop("device")
         self.torch_dtype = torch.float16 if "cuda" in self.device else torch.float32

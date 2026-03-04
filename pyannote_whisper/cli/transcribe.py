@@ -11,6 +11,7 @@ from pyannote_whisper.whisper import Whisper
 from pyannote_whisper.whisper_utils import (WriteSRT, WriteTXT, WriteVTT, optional_float,
                            optional_int, str2bool, LANGUAGES, TO_LANGUAGE_CODE)
 from pyannote_whisper.utils import diarize_text, write_to_txt
+from pyannote.audio import Pipeline as PyAnnotePipeline
 
 def parse_args(require_audio: bool = True):
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -51,12 +52,14 @@ def parse_args(require_audio: bool = True):
     
     parser.add_argument("--output_format", type=str, default="TXT", choices=['TXT', 'VTT', 'SRT'],
                         help="output format; TXT by default")
+    parser.add_argument("--both_models_in_memory", type=str2bool, default=False,
+                        help="output format; TXT by default")
 
     args = parser.parse_args().__dict__
 
     return args
 
-def cli(args: dict):
+def cli(args: dict) -> tuple[list[str], list[str]]:
 
     if args.get("audio") is None:
         raise ValueError("Audio file not specified")
@@ -86,14 +89,22 @@ def cli(args: dict):
     if model_dir is not None:
         os.environ['HF_HOME'] = model_dir
 
-    whisper = Whisper(args)
-
     diarization = args.pop("diarization")
     exclusive_mode = args.pop("exclusive")
+    both_models_in_memory = args.pop("both_models_in_memory")
+
+    transcript_paths = []
+    diarization_paths = []
+
+    whisper = None
+    pyannote_pipeline = None
 
     for audio_path in args.pop("audio"):
         print("Starting transcription")
         transctiption_start = time.time()
+
+        if whisper is None:
+            whisper = Whisper(args)
 
         result = whisper.transcribe(audio_path)
 
@@ -109,10 +120,11 @@ def cli(args: dict):
         audio_basename = os.path.basename(audio_path)
 
         # Delete whisper from memory to clear up space on systems with limited (V)RAM
-        del whisper
-        gc.collect()
-        if "cuda" in device:
-            torch.cuda.empty_cache()
+        if not both_models_in_memory:
+            whisper = None
+            gc.collect()
+            if "cuda" in device:
+                torch.cuda.empty_cache()
 
         transcript_path = ""
 
@@ -137,14 +149,15 @@ def cli(args: dict):
         hf_token = os.environ.get('HF_TOKEN', None)
 
         if diarization and hf_token is not None:
-            from pyannote.audio import Pipeline as PyAnnotePipeline
-            pyannote_pipeline = PyAnnotePipeline.from_pretrained("pyannote/speaker-diarization-community-1",
-                                                token=hf_token)
             
-            pyannote_pipeline.to(torch.device(device))
-            # create huggingface.co free account and create your access token ^ with access to read repos
-            # also you will need to apply access forms for certain repos to get access to them (it's free too)
-            # you will see which repos requires this additional actions as access errors when try to use the program 
+            if pyannote_pipeline is None:
+                pyannote_pipeline = PyAnnotePipeline.from_pretrained("pyannote/speaker-diarization-community-1",
+                                                    token=hf_token)
+                
+                pyannote_pipeline.to(torch.device(device))
+                # create huggingface.co free account and create your access token ^ with access to read repos
+                # also you will need to apply access forms for certain repos to get access to them (it's free too)
+                # you will see which repos requires this additional actions as access errors when try to use the program 
         elif hf_token is None:
             print("No valid token found in the HF_TOKEN environment variable, disabling diarization")
             diarization = False
@@ -171,13 +184,23 @@ def cli(args: dict):
             res = diarize_text(result, diarization_result)
             write_to_txt(res, diarization_path)
 
-            # Delete pyannote from memory to avoid running out of memory on consequent runs
-            del pyannote_pipeline
-            gc.collect()
-            if "cuda" in device:
-                torch.cuda.empty_cache()
+            # Delete pyannote from memory to make room for whisper on repeat loops
+            if not both_models_in_memory:
+                pyannote_pipeline = None
+                gc.collect()
+                if "cuda" in device:
+                    torch.cuda.empty_cache()
+        
+        transcript_paths.append(transcript_path)
+        diarization_paths.append(diarization_path)
 
-    return transcript_path, diarization_path
+    gc.collect()
+    whisper = None
+    pyannote_pipeline = None
+    if "cuda" in device:
+        torch.cuda.empty_cache()
+
+    return transcript_paths, diarization_paths
 
 def main():
     args = parse_args()
