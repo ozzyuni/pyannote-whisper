@@ -4,6 +4,6 @@
   ],
 
   "args": {
-    "audio": []
+    "both_models_in_memory": false
   }
 }
