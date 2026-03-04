@@ -4,6 +4,7 @@
   ],
 
   "args": {
-    "both_models_in_memory": false
+    "both_models_in_memory": false,
+    "output_dir": "/tmp/pyannote_whisper"
   }
 }

@@ -29,6 +29,7 @@ class PyAnnoteWhisperGUI:
     self.config_file = CONFIG_FILE
     self.last_log_msg = None # Prevents duplicate messages from strange gradio event behaviour
     self.log = ""
+    self.tmp = os.path.join("tmp", "pyannote_whisper")
 
   def launch(self):
 
@@ -45,6 +46,7 @@ class PyAnnoteWhisperGUI:
       log_box = gr.Textbox(label="Output", placeholder=INSTRUCTIONS, lines=10)
 
       audio = gr.UploadButton(label="Upload audio file(s)", file_count='multiple')
+      convert_to_wav = gr.Button(value="Convert to wav (16 bit)")
       process = gr.Button(value="Start transcription")
       transcript_download = gr.DownloadButton(label="Download raw transcript(s)")
       diarization_download = gr.DownloadButton(label="Download diarized transcript(s)")
@@ -52,6 +54,7 @@ class PyAnnoteWhisperGUI:
       whisper.input(fn=self.set_whisper, inputs=[whisper], outputs=[log_box])
       transcript_type.input(fn=self.set_output_format, inputs=[transcript_type], outputs=[log_box])
       audio.upload(fn=self.upload_audio, inputs=[audio], outputs=[log_box])
+      convert_to_wav.click(fn=self.convert_audio, inputs=[convert_to_wav], outputs=[log_box])
       diarization.input(fn=self.set_diarization, inputs=[diarization], outputs=[log_box])
       process.click(fn=self.process_file, outputs=[transcript_download, diarization_download, log_box])
 
@@ -85,7 +88,7 @@ class PyAnnoteWhisperGUI:
   def upload_audio(self, audio: list[str]):
     self.args['audio'] = audio
 
-    self.add_to_log(f"Audio file(s) uploaded:\n{"\n".join(audio)}")
+    self.add_to_log(f"Audio file(s) uploaded:\n{"\n".join(self.args['audio'])}")
     return self.log
 
   def download_transcript(self, value: str | None):
@@ -134,6 +137,34 @@ class PyAnnoteWhisperGUI:
 
     self.add_to_log(msg)
     return self.transcript_path, self.diarization_path, self.log
+  
+  def convert_audio(self, value: str | None) -> str:
+    audio = []
+    for audio_path in self.args['audio']:
+
+      if not audio_path.endswith(".wav"):
+        wav_path = f"{audio_path}.wav"
+        try:
+          import ffmpeg
+          (
+            ffmpeg
+            .input(audio_path)
+            .output(wav_path)
+            .run(overwrite_output=True)
+          )
+          audio.append(wav_path)
+        except Exception as e:
+          self.add_to_log(f"Failed to convert file:\n{audio_path}\n{e}")
+          audio.append(audio_path)
+        
+      else:
+        self.add_to_log(f"Existing wav file will not be re-converted:\n{audio_path}")
+        audio.append(audio_path)
+    
+    self.args['audio'] = audio
+
+    self.add_to_log(f"Audio file(s) after conversion:\n{"\n".join(self.args['audio'])}")
+    return self.log
 
 def main():
   gui = PyAnnoteWhisperGUI()
